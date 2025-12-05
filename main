@@ -1,36 +1,46 @@
-#include <iostream>         // Biblioteca estándar para entrada y salida
-#include <fstream>          // Para manejo de archivos
-#include <string>           // Para manejar strings
-#include "red.h"            // Incluye nuestra clase Red
-using namespace std;        // Para evitar usar std:: en cada llamada
+#include <iostream>  // Incluye la librería estándar para entrada/salida
+#include <fstream>   // Permite leer y escribir archivos
+#include <string>    // Habilita el uso del tipo string
+#include "red.h"    // Incluye la definición de la clase Red
+using namespace std; // Para evitar escribir std:: en cada uso
 
-void limpiarEntrada() {     // Función para limpiar buffer cuando hay error de entrada
-    cin.clear();            // Limpia el estado de error
-    cin.ignore(10000, '\n');// Descarta caracteres restantes en la entrada
+// Limpia el estado de cin cuando hay errores de entrada
+void limpiarEntrada() {
+    cin.clear();                 // Limpia flags de error
+    cin.ignore(10000, '\n');    // Descarta el buffer restante
 }
 
-void mostrarArchivoEnConsola(const string &ruta) { // Función para imprimir un archivo en consola
-    ifstream in(ruta);      // Se abre el archivo para leer
-    if (!in.is_open()) {    // Verifica si el archivo no abrió
-        cout << "❌ No se pudo abrir el archivo: " << ruta << "\n";
+// Muestra el contenido de un archivo línea por línea
+void mostrarArchivoEnConsola(const string &ruta) {
+    ifstream in(ruta);           // Abre el archivo en modo lectura
+    if (!in.is_open()) {         // Verifica si se abrió correctamente
+        cout << "❌ No se pudo abrir el archivo para mostrar su contenido: " << ruta << "\n";
         return;
     }
     cout << "\n--- Contenido de " << ruta << " ---\n";
+    string linea;
+    int lineaNum = 1;
 
-    string linea;           // Para leer líneas del archivo
-    int lineaNum = 1;       // Contador de líneas
-    while (getline(in, linea)) { // Lee línea por línea
-        cout << lineaNum++ << ": " << linea << "\n"; // Muestra contenido numerado
+    // Lee el archivo completo línea por línea
+    while (getline(in, linea)) {
+        cout << lineaNum++ << ": " << linea << "\n";  // Imprime número de línea + contenido
     }
     cout << "--- Fin de " << ruta << " ---\n\n";
-    in.close();             // Cierra archivo
+    in.close(); // Cierra el archivo
+}
+
+// Añade extensión ".txt" si el usuario no la coloca
+string asegurarExtensionTxt(const string &nombre) {
+    if (nombre.find('.') == string::npos)
+        return nombre + ".txt";   // Si no tiene punto, agrega extensión
+    return nombre;                 // Si ya tiene, lo deja igual
 }
 
 int main() {
-    Red* red = new Red();   // Se crea una red inicialmente vacía
-    int opcion = -1;        // Variable para menú interactivo
+    Red* red = new Red();  // Crea una red vacía
+    int opcion = -1;       // Control del menú
 
-    while (true) {          // Loop del menú principal
+    while (true) {         // Ciclo principal del programa
         cout << "\n========= MENU =========\n";
         cout << "1. Generar red aleatoria\n";
         cout << "2. Mostrar matriz de costos\n";
@@ -45,123 +55,130 @@ int main() {
         cout << "0. Salir\n";
         cout << "Elige: ";
 
-        cin >> opcion;      // El usuario elige opción
+        cin >> opcion;         // Lee opción elegida
 
-        if (!cin) {         // Si hubo error en entrada
-            limpiarEntrada();
+        if (!cin) {            // Si entrada inválida
+            limpiarEntrada();  // Limpia cin
             cout << "❌ Entrada inválida.\n";
-            continue;       // Vuelve al menú
+            continue;
         }
-        if (opcion == 0) {  // Caso salir
+
+        if (opcion == 0) {     // Condición de salida
             cout << "Saliendo...\n";
             break;
         }
 
-        switch (opcion) {   // Switch principal de opciones
-        case 1: {
+        switch (opcion) {
+
+        case 1: {  // GENERAR RED ALEATORIA
             int n;
             cout << "Cantidad de enrutadores: ";
-            cin >> n;       // Usuario ingresa cantidad
-
-            if (!cin || n <= 0) { // Valida entrada
+            cin >> n;
+            if (!cin || n <= 0) {    // Validación
                 limpiarEntrada();
                 cout << "❌ Número inválido.\n";
                 break;
             }
-            
-            red->~Red();             // Se destruye la red actual
-            new (red) Red(n);        // Se reconstruye con n routers
-            red->generarRedAleatoria(); // Genera enlaces y costos aleatorios
-
+            delete red;              // Elimina red anterior
+            red = new Red(n);        // Crea red con n routers
+            red->generarRedAleatoria();      // Genera enlaces con costos aleatorios
+            red->actualizarTodasLasTablas(); // Calcula tablas de enrutamiento
             cout << "✔ Red aleatoria generada.\n";
             break;
         }
 
         case 2:
-            red->mostrarRed();       // Imprime matriz de costos
+            red->mostrarRed();   // Imprime matriz de costos
             break;
 
         case 3:
-            red->mostrarTablasDeEnrutamiento(); // Calcula Dijkstra y muestra tabla
+            red->mostrarTablasDeEnrutamiento(); // Muestra las tablas de todos los routers
             break;
 
         case 4:
-            red->agregarEnrutador();   // Agrega un router nuevo
+            red->agregarEnrutador();           // Agrega router al final
+            red->actualizarTodasLasTablas();   // Recalcula rutas
             break;
 
-        case 5: {
+        case 5: {  // ELIMINAR ENRUTADOR
             int id;
             cout << "ID a eliminar: ";
             cin >> id;
-            if (!cin) {              // Verifica entrada
+            if (!cin) {
                 limpiarEntrada();
                 cout << "❌ Entrada inválida.\n";
                 break;
             }
-            red->eliminarEnrutador(id); // Elimina router dado
+            red->eliminarEnrutador(id);        // Borra router
+            red->actualizarTodasLasTablas();   // Recalcula rutas
             break;
         }
 
-        case 6: {
+        case 6: {  // AGREGAR ENLACE
             int id1, id2, costo;
             cout << "Ingresa id1 id2 costo: ";
-            if (!(cin >> id1 >> id2 >> costo)) { // Entrada inválida
+            if (!(cin >> id1 >> id2 >> costo)) {
                 limpiarEntrada();
-                cout << "❌ Entrada inválida.\n";
+                cout << "❌ Entrada inválida. Se requieren 3 números.\n";
                 break;
             }
-            red->agregarEnlaceSeguro(id1, id2, costo); // Agrega enlace
+            red->agregarEnlaceSeguro(id1, id2, costo); // Crea enlace entre routers
+            red->actualizarTodasLasTablas();
             break;
         }
 
-        case 7: {
+        case 7: {  // ELIMINAR ENLACE
             int id1, id2;
             cout << "Ingresa id1 id2: ";
-            if (!(cin >> id1 >> id2)) { // Entrada inválida
+            if (!(cin >> id1 >> id2)) {
                 limpiarEntrada();
-                cout << "❌ Entrada inválida.\n";
+                cout << "❌ Entrada inválida. Se requieren 2 números.\n";
                 break;
             }
-            red->eliminarEnlaceSeguro(id1, id2); // Elimina enlace
+            red->eliminarEnlaceSeguro(id1, id2); // Quita conexión
+            red->actualizarTodasLasTablas();
             break;
         }
 
-        case 8: {
+        case 8: {  // CARGAR DESDE ARCHIVO
             string archivo;
             cout << "Archivo: ";
             cin >> archivo;
+            archivo = asegurarExtensionTxt(archivo);
 
-            if (red->cargarDesdeArchivo(archivo)) // Carga topología desde archivo
+            if (red->cargarDesdeArchivo(archivo)) {
+                red->actualizarTodasLasTablas();
                 cout << "✔ Archivo cargado correctamente.\n";
-            else
+            } else {
                 cout << "❌ No se pudo cargar la red.\n";
-
+            }
             break;
         }
 
-        case 9: {
+        case 9: {  // GUARDAR EN ARCHIVO
             string archivo;
             cout << "Archivo: ";
             cin >> archivo;
+            archivo = asegurarExtensionTxt(archivo);
 
-            if (red->guardarEnArchivo(archivo)) { // Guarda red en archivo
-                cout << "✔ Archivo guardado.\n";
-                mostrarArchivoEnConsola(archivo + ".txt"); // Muestra el contenido guardado
+            if (red->guardarEnArchivo(archivo)) {
+                cout << "✔ Archivo guardado correctamente: " << archivo << "\n";
+                mostrarArchivoEnConsola(archivo); // Muestra lo guardado
             } else {
                 cout << "❌ No se pudo guardar.\n";
             }
             break;
         }
 
-        case 10: {
+        case 10: { // CALCULAR RUTA MÁS CORTA
             int o, d;
             cout << "Origen y destino: ";
-            if (!(cin >> o >> d)) {   // Entrada inválida
+            if (!(cin >> o >> d)) {
                 limpiarEntrada();
                 cout << "❌ Entrada inválida.\n";
                 break;
             }
-            red->calcularRutaMasCorta(o, d); // Usa Dijkstra para calcular camino mínimo
+            red->calcularRutaMasCorta(o, d);
             break;
         }
 
@@ -170,6 +187,6 @@ int main() {
         }
     }
 
-    delete red;   // Se elimina la red al final
-    return 0;     // Termina el programa
+    delete red; // Libera memoria al salir
+    return 0;   // Fin del programa
 }
