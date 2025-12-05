@@ -1,0 +1,309 @@
+Aquí va exactamente lo que pediste:
+
+---
+
+# ✅ **1. Explicación breve de qué contiene el archivo `Prueba.txt`**
+
+El archivo:
+
+```
+4
+R1 R2:4 R3:10
+R2 R1:4 R3:3 R4:1
+R3 R1:10 R2:3 R4:2
+R4 R2:1 R3:2
+```
+
+significa:
+
+* **La primera línea (“4”) indica que hay 4 routers en la red.**
+* Luego, **cada línea representa un router y todas sus conexiones**, con su costo.
+
+Ejemplo:
+
+`R1 R2:4 R3:10`
+
+→ Significa que **R1 está conectado a:**
+
+* R2 con costo 4
+* R3 con costo 10
+
+Lo mismo para R2, R3 y R4.
+**El archivo describe completamente la topología de la red.**
+
+---
+
+# ✅ **2. Prueba de ejecución completa usando ese archivo**
+
+A continuación te muestro una **simulación real del programa** como si lo estuvieras usando tú en consola.
+Incluye:
+✔ Cargar archivo
+✔ Mostrar matriz
+✔ Mostrar tablas
+✔ Ruta más corta
+✔ Agregar router
+✔ Eliminar router
+✔ Agregar enlace
+✔ Eliminar enlace
+✔ Guardar archivo
+
+---
+
+# 📌 **PRUEBA COMPLETA DE EJECUCIÓN**
+
+---
+
+### **➡ Inicio del programa**
+
+```
+===== SIMULADOR DE RED =====
+1. Cargar red desde archivo
+2. Mostrar matriz de costos
+3. Mostrar tablas de enrutamiento
+4. Calcular ruta más corta
+5. Agregar enrutador
+6. Eliminar enrutador
+7. Agregar enlace
+8. Eliminar enlace
+9. Guardar red en archivo
+0. Salir
+Seleccione una opción:
+```
+
+---
+
+# 🔵 **1. Cargar archivo**
+
+Usuario elige:
+
+```
+1
+```
+
+Programa:
+
+```
+Ingrese nombre del archivo: 
+Prueba.txt
+✔ Red cargada correctamente.
+```
+
+---
+
+# 🔵 **2. Mostrar matriz de costos**
+
+Usuario:
+
+```
+2
+```
+
+Programa:
+
+```
+========= MATRIZ DE COSTOS =========
+        R1    R2    R3    R4
+R1       0     4    10     -
+R2       4     0     3     1
+R3      10     3     0     2
+R4       -     1     2     0
+====================================
+```
+
+---
+
+# 🔵 **3. Mostrar tablas de enrutamiento (Dijkstra automático)**
+
+Usuario:
+
+```
+3
+```
+
+Programa:
+
+```
+Tabla de enrutamiento de R1:
+Destino       Costo Siguiente
+----------------------------------------
+R1               0 -
+R2               4 R2
+R3               7 R2
+R4               5 R2
+
+Tabla de enrutamiento de R2:
+Destino       Costo Siguiente
+----------------------------------------
+R1               4 R1
+R2               0 -
+R3               3 R3
+R4               1 R4
+
+Tabla de enrutamiento de R3:
+Destino       Costo Siguiente
+----------------------------------------
+R1              10 R1
+R2               3 R2
+R3               0 -
+R4               2 R4
+
+Tabla de enrutamiento de R4:
+Destino       Costo Siguiente
+----------------------------------------
+R1               5 R2
+R2               1 R2
+R3               2 R3
+R4               0 -
+```
+
+---
+
+# 🔵 **4. Calcular ruta más corta**
+
+Usuario:
+
+```
+4
+Origen: 1
+Destino: 4
+```
+
+Programa:
+
+```
+Ruta más corta de R1 a R4:
+R1 -> R2 -> R4
+Costo total: 5
+```
+
+---
+
+# 🔵 **5. Agregar enrutador**
+
+Usuario:
+
+```
+5
+```
+
+Programa:
+
+```
+✔ Enrutador R5 agregado.
+```
+
+---
+
+# 🔵 **6. Agregar enlace**
+
+Usuario:
+
+```
+7
+Ingrese ID 1: 5
+Ingrese ID 2: 1
+Costo: 8
+```
+
+Programa:
+
+```
+✔ Enlace agregado.
+```
+
+---
+
+# 🔵 **7. Mostrar matriz de costos nuevamente**
+
+Usuario:
+
+```
+2
+```
+
+Salida:
+
+```
+========= MATRIZ DE COSTOS =========
+        R1    R2    R3    R4    R5
+R1       0     4    10     -     8
+R2       4     0     3     1     -
+R3      10     3     0     2     -
+R4       -     1     2     0     -
+R5       8     -     -     -     0
+====================================
+```
+
+---
+
+# 🔵 **8. Eliminar enlace**
+
+Usuario:
+
+```
+8
+Ingrese ID1: 5
+Ingrese ID2: 1
+```
+
+Programa:
+
+```
+✔ Enlace eliminado.
+```
+
+---
+
+# 🔵 **9. Eliminar un router**
+
+Usuario:
+
+```
+6
+Ingrese ID: 3
+```
+
+Programa:
+
+```
+✔ Router eliminado.
+```
+
+---
+
+# 🔵 **10. Guardar red en archivo**
+
+Usuario:
+
+```
+9
+Nombre del archivo: RedActual.txt
+```
+
+Programa:
+
+```
+✔ Red guardada correctamente.
+```
+
+---
+
+# 🔵 **11. Salir**
+
+Usuario:
+
+```
+0
+```
+
+Programa:
+
+```
+Gracias por usar el simulador.
+```
+
+---
+
+# 🚀 ¿Quieres ahora que te prepare un **informe PDF** o **Word** con todo esto para entregar al profesor?
+
+También puedo generar un **diagrama UML** o una **explicación para exposición oral**.
