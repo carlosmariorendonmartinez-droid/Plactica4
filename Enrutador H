@@ -1,0 +1,32 @@
+#ifndef ENRUTADOR_H // Evita que el archivo se incluya más de una vez
+#define ENRUTADOR_H // Marca que ya fue incluido
+
+#include <map> // Se usa para almacenar asociaciones clave-valor
+#include <string> // Permite usar strings como nombres de routers
+using namespace std; // Evita escribir std:: en cada uso
+
+class Router { // Definición de la clase Router
+public: // Todo lo siguiente es accesible públicamente
+    int id; // Identificador numérico del router
+    map<Router*, int> vecinos; // Mapa: puntero a router vecino -> costo de conexión
+
+    map<string, pair<int, string>> tablaEnrutamiento; // Tabla: destino -> (costo, siguiente salto)
+
+    Router(int id); // Constructor que inicializa el router con un id
+    void nuevoVecino(Router* vecino, int costo); // Agrega un vecino con su costo
+    void eliminarVecino(Router* vecino); // Elimina un vecino de la lista
+
+    string getNombre() const; // Retorna el nombre del router (generalmente "R<id>")
+    map<string, int> getTabla() const; // Retorna tabla simplificada destino->costo
+    void mostrarConexiones() const; // Imprime la lista de vecinos y sus costos
+
+    void actualizarTabla(const map<string, pair<int, string>>& nueva); // Actualiza tabla con nueva info
+
+    void agregarConexion(const string& nombreVecino, int costo); // Agrega una conexión por nombre
+    void eliminarConexion(const string& nombreVecino); // Elimina una conexión por nombre
+
+    void mostrarTablaEnrutamiento(const map<string, pair<int, string>>& tabla) const; // Muestra tabla que se pasa como parámetro
+    void mostrarTablaEnrutamiento() const; // Muestra la tabla del propio router
+};
+
+#endif // Fin del include guard
