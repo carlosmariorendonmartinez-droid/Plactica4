@@ -1,0 +1,40 @@
+#ifndef RED_H // Evita inclusión múltiple del archivo
+#define RED_H // Marca que ya fue incluido
+
+#include <vector> // Para manejar listas dinámicas (arreglo flexible)
+#include <string> // Para usar strings en nombres y archivos
+#include "enrutador.h" // Incluye la definición de Router
+using namespace std; // Evita escribir std:: cada vez
+
+class Red { // Clase que representa toda la red de routers
+public: // Todo lo siguiente será accesible públicamente
+    vector<Router*> enrutadores; // Lista de punteros a cada router existente en la red
+
+    Red(); // Constructor por defecto
+    Red(int n); // Constructor que genera n routers
+    ~Red(); // Destructor que libera memoria
+
+    int cantidadEnrutadores() const; // Devuelve cuántos routers hay en la red
+
+    void generarRedAleatoria(); // Genera conexiones aleatorias entre routers
+    void mostrarRed() const; // Muestra todas las conexiones de la red
+    void mostrarTablasDeEnrutamiento() const; // Muestra las tablas de todos los routers
+
+    void agregarEnrutador(); // Agrega un nuevo router a la red
+    void eliminarEnrutador(int id); // Elimina un router por su id
+
+    void agregarEnlaceSeguro(int id1, int id2, int costo); // Une dos routers con un costo
+    void eliminarEnlaceSeguro(int id1, int id2); // Elimina una conexión entre dos routers
+
+    bool guardarEnArchivo(const string& filename) const; // Guarda la red en un archivo
+    bool cargarDesdeArchivo(const string& filename); // Carga la red desde un archivo
+
+    void calcularRutaMasCorta(int o, int d); // Calcula ruta mínima de o -> d
+
+    void actualizarTodasLasTablas(); // Ejecuta algoritmo de enrutamiento para toda la red
+
+private: // Métodos internos que no deben ser llamados afuera
+    void dijkstra(Router* origen, Router* destino, int& costo, vector<Router*>& ruta) const; // Calcula ruta corta usando Dijkstra
+};
+
+#endif // Fin del include guard
