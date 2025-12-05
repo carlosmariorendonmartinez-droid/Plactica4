@@ -1,0 +1,242 @@
+#include "red.h" // Incluye la definición de la clase Red
+#include <iostream> // Para imprimir en pantalla
+#include <fstream>  // Para lectura y escritura en archivos
+#include <queue>    // Para la cola de prioridad usada en Dijkstra
+#include <limits>   // Para obtener el valor máximo representable
+#include <algorithm> // Para usar reverse en reconstrucción de ruta
+#include <sstream>   // Para procesar líneas de texto al cargar archivo
+#include <iomanip>   // Para formatear salida con columnas
+using namespace std; // Evita usar std:: en cada comando
+
+const int INF = numeric_limits<int>::max() / 4; // Valor muy grande usado como "infinito" para rutas
+
+Red::Red() {} // Constructor por defecto
+
+Red::Red(int n) { // Constructor que genera n routers
+    for (int i = 1; i <= n; i++)
+        enrutadores.push_back(new Router(i)); // Agrega routers numerados del 1 al n
+}
+
+Red::~Red() { // Destructor: libera toda la memoria
+    for (auto r : enrutadores) delete r; // Borra cada Router creado con new
+}
+
+int Red::cantidadEnrutadores() const { // Devuelve número de routers existentes
+    return enrutadores.size();
+}
+
+void Red::generarRedAleatoria() { // Genera red completamente conectada aleatoria
+    for (auto r : enrutadores)
+        r->vecinos.clear(); // Limpia conexiones previas
+
+    int n = enrutadores.size();
+    for (int i = 0; i < n; i++)
+        for (int j = i + 1; j < n; j++) { // Evita duplicar enlaces
+            int c = rand() % 20 + 1; // Costo aleatorio entre 1 y 20
+            enrutadores[i]->nuevoVecino(enrutadores[j], c);
+            enrutadores[j]->nuevoVecino(enrutadores[i], c);
+        }
+}
+
+void Red::mostrarRed() const { // Muestra matriz de costos entre routers
+    if (enrutadores.empty()) {
+        cout << "Red vacia.\n";
+        return;
+    }
+
+    cout << "\n========= MATRIZ DE COSTOS =========\n";
+    const int w = 6; // Ancho de cada columna
+    cout << setw(6) << " "; // Espacio inicial
+    for (auto r : enrutadores) cout << setw(w) << r->getNombre(); // Encabezados
+    cout << "\n";
+
+    for (auto a : enrutadores) { // Filas
+        cout << setw(6) << a->getNombre();
+        for (auto b : enrutadores) { // Columnas
+            if (a == b) {
+                cout << setw(w) << 0; // Costo a sí mismo
+            } else {
+                int c = INF; // Inicialmente infinito
+                auto it = a->vecinos.find(b);
+                if (it != a->vecinos.end()) c = it->second; // Si existe, usar costo real
+                if (c == INF) cout << setw(w) << "-"; // No hay enlace
+                else cout << setw(w) << c;
+            }
+        }
+        cout << "\n";
+    }
+    cout << "====================================\n";
+}
+
+void Red::mostrarTablasDeEnrutamiento() const { // Muestra tabla de cada router
+    if (enrutadores.empty()) {
+        cout << "Red vacia.\n";
+        return;
+    }
+
+    for (auto origen : enrutadores) {
+        origen->mostrarTablaEnrutamiento();
+    }
+}
+
+void Red::agregarEnrutador() { // Agrega router al final
+    int nuevoID = enrutadores.size() + 1;
+    Router* r = new Router(nuevoID);
+    enrutadores.push_back(r);
+    cout << "✔ Enrutador " << r->getNombre() << " agregado.\n";
+}
+
+void Red::eliminarEnrutador(int id) { // Borra router y sus enlaces
+    if (id <= 0 || id > enrutadores.size()) {
+        cout << "❌ ID inválido.\n";
+        return;
+    }
+
+    Router* borrar = enrutadores[id - 1];
+
+    for (auto r : enrutadores)
+        r->eliminarVecino(borrar); // Elimina enlaces al router que se borra
+
+    delete borrar; // Libera memoria
+    enrutadores.erase(enrutadores.begin() + (id - 1)); // Lo elimina de la lista
+
+    for (int i = 0; i < enrutadores.size(); i++)
+        enrutadores[i]->id = i + 1; // Actualiza IDs para mantener orden
+
+    cout << "✔ Router eliminado.\n";
+}
+
+void Red::agregarEnlaceSeguro(int id1, int id2, int costo) { // Agrega enlace entre dos routers
+    if (id1 <= 0 || id2 <= 0 || id1 > enrutadores.size() || id2 > enrutadores.size()) {
+        cout << "❌ IDs fuera de rango.\n";
+        return;
+    }
+    if (id1 == id2) {
+        cout << "❌ No se puede enlazar el mismo enrutador.\n";
+        return;
+    }
+
+    Router* a = enrutadores[id1 - 1];
+    Router* b = enrutadores[id2 - 1];
+
+    a->nuevoVecino(b, costo);
+    b->nuevoVecino(a, costo);
+
+    cout << "✔ Enlace agregado.\n";
+}
+
+void Red::eliminarEnlaceSeguro(int id1, int id2) { // Elimina conexión segura
+    if (id1 <= 0 || id2 <= 0 || id1 > enrutadores.size() || id2 > enrutadores.size()) {
+        cout << "❌ IDs fuera de rango.\n";
+        return;
+    }
+
+    Router* a = enrutadores[id1 - 1];
+    Router* b = enrutadores[id2 - 1];
+
+    a->eliminarVecino(b);
+    b->eliminarVecino(a);
+
+    cout << "✔ Enlace eliminado.\n";
+}
+
+void Red::dijkstra(Router* origen, Router* destino, int& costo, vector<Router*>& ruta) const { // Algoritmo de ruta más corta
+    costo = INF; // Inicialmente infinito
+    ruta.clear(); // Ruta vacía
+
+    map<Router*, int> dist; // Distancia mínima conocida
+    map<Router*, Router*> prev; // Para reconstrucción de ruta
+    for (auto r : enrutadores) dist[r] = INF; // Inicializa todo en infinito
+
+    dist[origen] = 0; // Distancia al origen es 0
+
+    using P = pair<int, Router*>; // (distancia, router)
+    priority_queue<P, vector<P>, greater<P>> pq; // Cola de prioridad mínima
+
+    pq.push({0, origen}); // Insertamos origen
+
+    while (!pq.empty()) { // Mientras haya nodos por procesar
+        auto top = pq.top(); pq.pop();
+        int d = top.first;
+        Router* u = top.second;
+
+        if (d > dist[u]) continue; // Entradas viejas, ignorar
+        if (u == destino) break; // Si ya llegamos al destino, salimos
+
+        for (auto& [v, c] : u->vecinos) { // Recorremos vecinos
+            int nd = dist[u] + c; // Nuevo costo
+            if (nd < dist[v]) { // Si encontramos mejor camino
+                dist[v] = nd;
+                prev[v] = u;
+                pq.push({nd, v});
+            }
+        }
+    }
+
+    if (dist[destino] == INF) return; // Sin ruta
+
+    costo = dist[destino]; // Distancia final mínima
+
+    Router* cur = destino;
+    while (cur != origen) { // Reconstruye ruta
+        ruta.push_back(cur);
+        cur = prev[cur];
+    }
+    ruta.push_back(origen);
+    reverse(ruta.begin(), ruta.end()); // Invierte la ruta para que vaya origen → destino
+}
+
+bool Red::guardarEnArchivo(const string& filename) const { // Guarda red en archivo
+    ofstream out(filename);
+    if (!out.is_open()) return false;
+
+    out << enrutadores.size() << "\n"; // Guarda cuántos routers hay
+
+    for (auto r : enrutadores) {
+        out << r->getNombre(); // Nombre del router
+        for (auto& [v, c] : r->vecinos)
+            out << " " << v->getNombre() << ":" << c; // Vecino:costo
+        out << "\n";
+    }
+    return true;
+}
+
+bool Red::cargarDesdeArchivo(const string& filename) { // Carga red desde archivo
+    ifstream in(filename);
+    if (!in.is_open()) return false;
+
+    for (auto r : enrutadores) delete r; // Limpia red anterior
+    enrutadores.clear();
+
+    int n;
+    in >> n;
+    if (!in) return false;
+
+    for (int i = 1; i <= n; i++)
+        enrutadores.push_back(new Router(i)); // Crea nuevos routers
+
+    string line;
+    getline(in, line); // Consumir salto de línea
+
+    while (getline(in, line)) { // Recorre archivo
+        if (line.empty()) continue;
+
+        stringstream ss(line);
+        string name;
+        ss >> name;
+
+        if (name.size() < 2 || name[0] != 'R') continue;
+        int idx = stoi(name.substr(1));
+        if (idx < 1 || idx > enrutadores.size()) continue;
+
+        Router* r = enrutadores[idx - 1];
+
+        string token;
+        while (ss >> token) {
+            size_t pos = token.find(":");
+            if (pos == string::npos) continue;
+            string vecName = token.substr(0, pos);
+            int costo = 0;
+            try {
+                costo = stoi
+
