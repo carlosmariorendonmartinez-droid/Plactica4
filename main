@@ -1,0 +1,175 @@
+#include <iostream>         // Biblioteca estándar para entrada y salida
+#include <fstream>          // Para manejo de archivos
+#include <string>           // Para manejar strings
+#include "red.h"            // Incluye nuestra clase Red
+using namespace std;        // Para evitar usar std:: en cada llamada
+
+void limpiarEntrada() {     // Función para limpiar buffer cuando hay error de entrada
+    cin.clear();            // Limpia el estado de error
+    cin.ignore(10000, '\n');// Descarta caracteres restantes en la entrada
+}
+
+void mostrarArchivoEnConsola(const string &ruta) { // Función para imprimir un archivo en consola
+    ifstream in(ruta);      // Se abre el archivo para leer
+    if (!in.is_open()) {    // Verifica si el archivo no abrió
+        cout << "❌ No se pudo abrir el archivo: " << ruta << "\n";
+        return;
+    }
+    cout << "\n--- Contenido de " << ruta << " ---\n";
+
+    string linea;           // Para leer líneas del archivo
+    int lineaNum = 1;       // Contador de líneas
+    while (getline(in, linea)) { // Lee línea por línea
+        cout << lineaNum++ << ": " << linea << "\n"; // Muestra contenido numerado
+    }
+    cout << "--- Fin de " << ruta << " ---\n\n";
+    in.close();             // Cierra archivo
+}
+
+int main() {
+    Red* red = new Red();   // Se crea una red inicialmente vacía
+    int opcion = -1;        // Variable para menú interactivo
+
+    while (true) {          // Loop del menú principal
+        cout << "\n========= MENU =========\n";
+        cout << "1. Generar red aleatoria\n";
+        cout << "2. Mostrar matriz de costos\n";
+        cout << "3. Mostrar tablas de enrutamiento\n";
+        cout << "4. Agregar enrutador\n";
+        cout << "5. Eliminar enrutador\n";
+        cout << "6. Agregar enlace\n";
+        cout << "7. Eliminar enlace\n";
+        cout << "8. Cargar red desde archivo\n";
+        cout << "9. Guardar red en archivo\n";
+        cout << "10. Calcular ruta mas corta\n";
+        cout << "0. Salir\n";
+        cout << "Elige: ";
+
+        cin >> opcion;      // El usuario elige opción
+
+        if (!cin) {         // Si hubo error en entrada
+            limpiarEntrada();
+            cout << "❌ Entrada inválida.\n";
+            continue;       // Vuelve al menú
+        }
+        if (opcion == 0) {  // Caso salir
+            cout << "Saliendo...\n";
+            break;
+        }
+
+        switch (opcion) {   // Switch principal de opciones
+        case 1: {
+            int n;
+            cout << "Cantidad de enrutadores: ";
+            cin >> n;       // Usuario ingresa cantidad
+
+            if (!cin || n <= 0) { // Valida entrada
+                limpiarEntrada();
+                cout << "❌ Número inválido.\n";
+                break;
+            }
+            
+            red->~Red();             // Se destruye la red actual
+            new (red) Red(n);        // Se reconstruye con n routers
+            red->generarRedAleatoria(); // Genera enlaces y costos aleatorios
+
+            cout << "✔ Red aleatoria generada.\n";
+            break;
+        }
+
+        case 2:
+            red->mostrarRed();       // Imprime matriz de costos
+            break;
+
+        case 3:
+            red->mostrarTablasDeEnrutamiento(); // Calcula Dijkstra y muestra tabla
+            break;
+
+        case 4:
+            red->agregarEnrutador();   // Agrega un router nuevo
+            break;
+
+        case 5: {
+            int id;
+            cout << "ID a eliminar: ";
+            cin >> id;
+            if (!cin) {              // Verifica entrada
+                limpiarEntrada();
+                cout << "❌ Entrada inválida.\n";
+                break;
+            }
+            red->eliminarEnrutador(id); // Elimina router dado
+            break;
+        }
+
+        case 6: {
+            int id1, id2, costo;
+            cout << "Ingresa id1 id2 costo: ";
+            if (!(cin >> id1 >> id2 >> costo)) { // Entrada inválida
+                limpiarEntrada();
+                cout << "❌ Entrada inválida.\n";
+                break;
+            }
+            red->agregarEnlaceSeguro(id1, id2, costo); // Agrega enlace
+            break;
+        }
+
+        case 7: {
+            int id1, id2;
+            cout << "Ingresa id1 id2: ";
+            if (!(cin >> id1 >> id2)) { // Entrada inválida
+                limpiarEntrada();
+                cout << "❌ Entrada inválida.\n";
+                break;
+            }
+            red->eliminarEnlaceSeguro(id1, id2); // Elimina enlace
+            break;
+        }
+
+        case 8: {
+            string archivo;
+            cout << "Archivo: ";
+            cin >> archivo;
+
+            if (red->cargarDesdeArchivo(archivo)) // Carga topología desde archivo
+                cout << "✔ Archivo cargado correctamente.\n";
+            else
+                cout << "❌ No se pudo cargar la red.\n";
+
+            break;
+        }
+
+        case 9: {
+            string archivo;
+            cout << "Archivo: ";
+            cin >> archivo;
+
+            if (red->guardarEnArchivo(archivo)) { // Guarda red en archivo
+                cout << "✔ Archivo guardado.\n";
+                mostrarArchivoEnConsola(archivo + ".txt"); // Muestra el contenido guardado
+            } else {
+                cout << "❌ No se pudo guardar.\n";
+            }
+            break;
+        }
+
+        case 10: {
+            int o, d;
+            cout << "Origen y destino: ";
+            if (!(cin >> o >> d)) {   // Entrada inválida
+                limpiarEntrada();
+                cout << "❌ Entrada inválida.\n";
+                break;
+            }
+            red->calcularRutaMasCorta(o, d); // Usa Dijkstra para calcular camino mínimo
+            break;
+        }
+
+        default:
+            cout << "❌ Opción inválida.\n";
+        }
+    }
+
+    delete red;   // Se elimina la red al final
+    return 0;     // Termina el programa
+}
