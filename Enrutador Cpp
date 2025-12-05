@@ -1,0 +1,76 @@
+#include "enrutador.h" // Incluye la definición de la clase Router
+#include <iostream> // Necesario para imprimir en pantalla
+#include <iomanip>  // Permite usar setw para formatear columnas
+using namespace std; // Evita usar std:: delante de cada comando
+
+Router::Router(int id) : id(id) {} // Constructor: inicializa el id del router
+
+void Router::nuevoVecino(Router* vecino, int costo) { // Agrega un vecino con su costo
+    if (!vecino || vecino == this) return; // Evita agregar un puntero inválido o a sí mismo
+    vecinos[vecino] = costo; // Inserta o actualiza la entrada del vecino
+}
+
+void Router::eliminarVecino(Router* vecino) { // Elimina un vecino si existe
+    if (!vecino) return; // Si el puntero es nulo, no hace nada
+    vecinos.erase(vecino); // Borra la entrada del mapa
+}
+
+string Router::getNombre() const { // Retorna el nombre "R<id>"
+    return "R" + to_string(id); // Convierte id a string y concatena
+}
+
+map<string, int> Router::getTabla() const { // Retorna tabla simple destino -> costo
+    map<string, int> tabla; // Mapa temporal que devolveremos
+    for (auto& [v, c] : vecinos) // Recorre todos los vecinos
+        if (v) tabla[v->getNombre()] = c; // Agrega destino y costo al mapa
+    return tabla; // Devuelve la tabla generada
+}
+
+void Router::mostrarConexiones() const { // Muestra lista de vecinos y costos
+    cout << getNombre() << " -> "; // Muestra nombre del router actual
+    if (vecinos.empty()) cout << "sin conexiones"; // Si no hay vecinos
+    else {
+        bool first = true; // Controla formato de comas
+        for (auto& [v, c] : vecinos) { // Recorre vecinos
+            if (!first) cout << ", "; // Imprime coma después del primero
+            cout << v->getNombre() << "(" << c << ")"; // Muestra vecino y costo
+            first = false;
+        }
+    }
+    cout << endl; // Salto de línea final
+}
+
+void Router::actualizarTabla(const map<string, pair<int, string>>& nueva) { // Actualiza tabla de enrutamiento
+    tablaEnrutamiento = nueva; // Sustituye por la nueva tabla recibida
+}
+
+void Router::agregarConexion(const string& nombreVecino, int costo) {
+    // Función definida por compatibilidad, pero no usada.
+    // Se ignoran los parámetros para evitar warnings.
+    (void)nombreVecino; // Marca variable como usada
+    (void)costo;        // Marca variable como usada
+}
+
+void Router::eliminarConexion(const string& nombreVecino) { // Elimina vecino según nombre
+    for (auto it = vecinos.begin(); it != vecinos.end();) { // Recorre el mapa con iterador
+        if (it->first && it->first->getNombre() == nombreVecino) // Si coincide el nombre
+            it = vecinos.erase(it); // Borra y actualiza iterador
+        else
+            ++it; // Avanza si no se borra
+    }
+}
+
+void Router::mostrarTablaEnrutamiento(const map<string, pair<int, string>>& tabla) const {
+    cout << "\nTabla de enrutamiento de " << getNombre() << ":\n"; // Encabezado
+    cout << setw(12) << "Destino" << setw(12) << "Costo" << " Siguiente\n"; // Columnas
+    cout << string(40, '-') << "\n"; // Línea separadora
+
+    for (auto& [dest, info] : tabla) { // Recorre tabla destino -> (costo, siguiente)
+        string costoStr = (info.first >= 100000000) ? "-" : to_string(info.first); // Infinitos
+        cout << setw(12) << dest << setw(12) << costoStr << " " << info.second << "\n"; // Filas
+    }
+}
+
+void Router::mostrarTablaEnrutamiento() const { // Muestra tabla propia
+    mostrarTablaEnrutamiento(tablaEnrutamiento); // Reutiliza función con parámetro
+}
